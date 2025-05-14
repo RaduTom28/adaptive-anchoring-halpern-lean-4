@@ -55,10 +55,87 @@ omit [CompleteSpace H] in
 lemma split_prod (x : H) : (2:ℝ) • x = x + x := by
   exact two_smul ℝ x
 
--- noted
+
+omit [CompleteSpace H] in
 theorem essential_1 (x y : H) : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x,y⟫ := by
   rw [@norm_add_sq_real]
   rw [add_right_comm]
+
+
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem comm_operation (x y z : H) : x + x - y - z = (x - y) + (x - z) := by
+  rw [@sub_add_sub_comm]
+  rw [@sub_sub]
+
+theorem square_nonexpansive (I : Iteration H) (x y : H) : ‖I.T x - I.T y‖^2 ≤ ‖x - y‖^2 := by
+  have h1 := I.hTNonExpansive x y
+  mono
+  simp
+
+-- add comparison util
+
+omit [CompleteSpace H] in
+theorem inner_factor_minus (x y0 y1 : H) : ⟪ x, y0 - y1 ⟫ = - ⟪ x , y1 - y0 ⟫ := by
+  rw [inner_sub_right]
+  rw [inner_sub_right]
+  rw [real_inner_comm]
+  simp
+
+
+theorem comparison_util {a b c : ℝ} (h : a + b ≤ b + c) : a ≤ c := by
+  linarith
+
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem norm_factor_minus {x y : H} : ‖x-y‖ = ‖y-x‖ := by
+  rw [@norm_sub_rev]
+
+theorem applied_norm_factor_minus (I : Iteration H) : ‖x I 1 - I.x_0‖ ^ 2 =  ‖I.x_0 - x I 1‖ ^ 2:= by
+  rw [@norm_sub_rev]
+
+lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
+  induction n
+  case zero =>
+    constructor
+    case left =>
+      unfold phi
+      simp
+      rw [base_case_recurrence]
+      simp
+    case right =>
+      have hRecFirstStep : I.T I.x_0 = (2:ℝ) • x I 1 - I.x_0 := by
+        rw [first_recurrence_term]
+        simp
+      have hNormSqConsecTermDiffExpanded: ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
+        rw [hRecFirstStep]
+        rw [split_prod]
+        rw [comm_operation]
+        rw [norm_add_sq_real]
+        rw [add_right_comm]
+        rw [real_inner_comm]
+        simp
+        rw [add_comm]
+      have hConsecSquareNonexpansive := square_nonexpansive I I.x_0 (x I 1)
+      simp
+      rw [first_phi]
+      simp
+      rw [inner_factor_minus] at hNormSqConsecTermDiffExpanded
+      simp at hNormSqConsecTermDiffExpanded
+      rw [hNormSqConsecTermDiffExpanded] at hConsecSquareNonexpansive
+      norm_num at hConsecSquareNonexpansive
+      rw [applied_norm_factor_minus] at hConsecSquareNonexpansive
+      exact comparison_util hConsecSquareNonexpansive
+  case succ n exp =>
+    have hPhiIndStep := And.left exp
+    have hBoundIndStep := And.right exp
+    constructor
+    case left =>
+      -- strategy  -> write lemma that has bound induction step as input that proves connection for next phi
+      sorry
+    case right =>
+      -- strategy  -> follow steps, maybe recycle commented lemmas below
+      sorry
+
+
 
 -- @[simp]
 -- lemma aux_simp (f : ℝ) : (f + 1) / f = (f + 1) • f⁻¹ := by
@@ -114,62 +191,3 @@ theorem essential_1 (x y : H) : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x
 
 -- theorem diff_first_two_terms (I : Iteration H) : ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
 -- sorry
-
-omit [InnerProductSpace ℝ H] [CompleteSpace H] in
-theorem comm_operation (x y z : H) : x + x - y - z = (x - y) + (x - z) := by
-  rw [@sub_add_sub_comm]
-  rw [@sub_sub]
-
-theorem square_nonexpansive (I : Iteration H) (x y : H) : ‖I.T x - I.T y‖^2 ≤ ‖x - y‖^2 := by
-  have h1 := I.hTNonExpansive x y
-  mono
-  simp
-
--- add comparison util
--- use theorem for minus change inside inner in new have
-
-
-omit [CompleteSpace H] in
-theorem inner_factor_minus (x y0 y1 : H) : ⟪ x, y0 - y1 ⟫ = - ⟪ x , y1 - y0 ⟫ := by
-  rw [inner_sub_right]
-  rw [inner_sub_right]
-  rw [real_inner_comm]
-  simp
-
-lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
-  induction n
-  case zero =>
-    constructor
-    case left =>
-      unfold phi
-      simp
-      rw [base_case_recurrence]
-      simp
-    case right =>
-      have hRecFirstStep : I.T I.x_0 = (2:ℝ) • x I 1 - I.x_0 := by
-        rw [first_recurrence_term]
-        simp
-      have hNormSqConsecTermDiffExpanded: ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
-        rw [hRecFirstStep]
-        rw [split_prod]
-        rw [comm_operation]
-        rw [norm_add_sq_real]
-        rw [add_right_comm]
-        rw [real_inner_comm]
-        simp
-        rw [add_comm]
-      have hConsecSquareNonexpansive := square_nonexpansive I I.x_0 (x I 1)
-
-      simp
-      rw [first_phi]
-      simp
-
-
-
-
-  case succ n exp =>
-    constructor
-    case left =>
-      sorry
-    case right =>
-      sorry
