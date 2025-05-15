@@ -106,6 +106,29 @@ theorem aux_simp_4 (I : Iteration H) (n : ℕ) : phi I (n + 1) ≥ n + 1 → phi
   intros h
   linarith
 
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem aux_simp_5 {a b c : H} :  a + b = c → b = c - a := by
+  intros h
+  exact eq_sub_of_add_eq' h
+
+omit [CompleteSpace H] in
+theorem aux_simp_6 {a b : H} {r : ℝ} (h : r ≠ 0) : r • a = b → a = r⁻¹ • b := by
+  intros h1
+  rw [← h1]
+  exact Eq.symm (inv_smul_smul₀ h a)
+
+theorem aux_simp_7 {a : ℝ} : a > 0 → a + 1 > 0 := by
+  intros h
+  linarith
+
+theorem aux_simp_8 {a b : ℝ} : a > 0 → b > 0 → a/b > 0 := by
+  intros h1 h2
+  exact div_pos h1 h2
+
+theorem aux_simp_9 {a b : ℝ} (h : b ≠ 0 ∧ a ≠ 0) : a/b ≠ 0 → b/a ≠ 0 := by
+  intro h1
+  exact div_ne_zero_iff.mpr h
+
 
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
@@ -177,8 +200,26 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
       case h =>
         exact aux_simp_4 I n hPhiIndStep
     case right =>
-      -- strategy  -> follow steps, maybe recycle commented lemmas below
-      sorry
+      have hRecurrenceRewritten : I.T (x I n) = x I (n+1) + (phi I (n+1)) ⁻¹ • (x I (n+1) - I.x_0) := by
+        have hRegularIterationDefinition := Eq.symm (recurrence_subst_phi I n)
+        have hRegularIterationDefinition := aux_simp_5 hRegularIterationDefinition
+        have hPhiRapNeqZero : (phi I (n + 1) / (phi I (n + 1) + 1)) ≠ 0 := by
+          have aux1 := aux_simp_4 I n hPhiIndStep
+          have aux2 := aux_simp_7 aux1
+          have aux3 := aux_simp_8 aux1 aux2
+          linarith
+        have hPhiRapNeqZeroInv : ( (phi I (n + 1) + 1)/phi I (n + 1) ) ≠ 0 := by
+          have aux1 := aux_simp_4 I n hPhiIndStep
+          have aux2 := aux_simp_7 aux1
+          have aux3 := aux_simp_8 aux2 aux1
+          linarith
+        have hRegularIterationDefinition := aux_simp_6 hPhiRapNeqZero hRegularIterationDefinition
+        field_simp at hRegularIterationDefinition
+        have hRegularIterationDefinition : I.T (x I n) = (phi I (n+1))⁻¹ • (phi I (n+1) +1) • x I (n + 1) - (phi I (n+1))⁻¹ • I.x_0 := by
+          norm_num at hRegularIterationDefinition
+        sorry
+
+
 
 
 
