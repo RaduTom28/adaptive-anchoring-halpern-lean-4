@@ -129,6 +129,49 @@ theorem aux_simp_9 {a b : ℝ} (h : b ≠ 0 ∧ a ≠ 0) : a/b ≠ 0 → b/a ≠
   intro h1
   exact div_ne_zero_iff.mpr h
 
+omit [CompleteSpace H] in
+theorem aux_simp_10 {b c d : H} {r : ℝ} : d = r • (b - c) → d = (r • b - r • c) := by
+  intro h
+  rw [h]
+  exact smul_sub r b c
+
+omit [CompleteSpace H] in
+theorem aux_simp_11 {a b : ℝ} {x : H} (h1 : a ≠ 0): ((a/b) • 1/a) • x  = b⁻¹ • x := by
+  field_simp
+  rw [div_mul_cancel_right₀ h1 b]
+  field_simp
+
+theorem aux_simp_12 {I : Iteration H} {n : Nat} : (phi I (n + 1) + 1) / phi I (n + 1) = (phi I (n+1) + 1) • (phi I (n + 1)) ⁻¹ := by
+  exact rfl
+
+theorem aux_simp_13 {I : Iteration H} {n : Nat} : (1 / (phi I (n + 1) + 1)) =  (phi I (n + 1) + 1) ⁻¹ := by
+  exact one_div (phi I (n + 1) + 1)
+
+
+omit [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem trivial1 { a : ℝ } (h1 : a ≠ 0) : a • a⁻¹ = 1 := by
+  field_simp
+
+ omit [CompleteSpace H] in
+theorem aux_simp_14 { a b : ℝ } {c : H} (h1 : a ≠ 0) : (a • b⁻¹) • a⁻¹ • c = b⁻¹ • c := by
+  have aux1 : (a • b⁻¹) • a⁻¹ • c = a • b⁻¹ • a⁻¹ • c := by
+    exact IsScalarTower.smul_assoc a b⁻¹ (a⁻¹ • c)
+  rw [aux1]
+  have aux2 : a • b⁻¹ • a⁻¹ • c = b⁻¹ • a • a⁻¹ • c := by rw [@smul_algebra_smul_comm]
+  have aux3 : b⁻¹ • a • a⁻¹ • c =  b⁻¹ • (a • a⁻¹) • c := by rw [@smul_assoc]
+  rw [trivial1] at aux3
+  have aux4 : b⁻¹ • a • a⁻¹ • c = a • b⁻¹ • a⁻¹ • c := by
+    exact id (Eq.symm aux2)
+  rw [←aux4]
+  have aux5 : b⁻¹ • (1:ℝ) • c = b⁻¹ • c := by rw [one_smul]
+  exact Eq.trans aux3 aux5
+  assumption
+
+
+theorem aux_simp_15 {I : Iteration H} {n : Nat} (h : phi I (n + 1) + 1 ≠  0) : ((phi I (n + 1) + 1) • (phi I (n + 1))⁻¹) • (phi I (n + 1) + 1)⁻¹ • I.x_0 = (phi I (n + 1))⁻¹ • I.x_0 := by
+  refine aux_simp_14 ?_
+  assumption
+
 
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
@@ -200,6 +243,10 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
       case h =>
         exact aux_simp_4 I n hPhiIndStep
     case right =>
+      have hPhiIndStepIsPos := aux_simp_4 I n hPhiIndStep
+      have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+      have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+      have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
       have hRecurrenceRewritten : I.T (x I n) = x I (n+1) + (phi I (n+1)) ⁻¹ • (x I (n+1) - I.x_0) := by
         have hRegularIterationDefinition := Eq.symm (recurrence_subst_phi I n)
         have hRegularIterationDefinition := aux_simp_5 hRegularIterationDefinition
@@ -217,7 +264,21 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
         field_simp at hRegularIterationDefinition
         have hRegularIterationDefinition : I.T (x I n) = (phi I (n+1))⁻¹ • (phi I (n+1) +1) • x I (n + 1) - (phi I (n+1))⁻¹ • I.x_0 := by
           norm_num at hRegularIterationDefinition
-        sorry
+          have aux1 := aux_simp_10 hRegularIterationDefinition
+          norm_num at aux1
+          field_simp at aux1
+          rw [aux_simp_12] at aux1
+          rw [aux_simp_13] at aux1
+          rw [aux_simp_15] at aux1
+          have aux1 : I.T (x I n) = (phi I (n + 1) + 1) • (phi I (n + 1))⁻¹ • x I (n + 1) - (phi I (n + 1))⁻¹ • I.x_0 := by
+            sorry
+
+
+
+          --have aux2 : ((phi I (n + 1) + 1) / phi I (n + 1)) • (phi I (n + 1) + 1)⁻¹ •  x I (n + 1) = (phi I (n+1))⁻¹ •  x I (n + 1) := by
+
+
+
 
 
 
