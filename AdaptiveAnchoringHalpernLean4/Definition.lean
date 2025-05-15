@@ -24,7 +24,7 @@ match n with
 
 noncomputable def phi (I : Iteration H)(n : Nat) : ℝ := 2 * ⟪x I (n-1) - I.T (x I (n-1)), I.x_0 - x I (n-1)⟫ / (‖x I (n-1) - I.T (x I (n-1))‖ ^ 2) + 1
 
-
+axiom fixed_point_not_encountered_in_sequence (I : Iteration H) (n : ℕ) : x I (n + 1) ≠ I.T (x I (n + 1))
 
 lemma base_case_recurrence (I : Iteration H) : x I 0 = I.x_0 := by
   unfold x
@@ -92,6 +92,21 @@ theorem norm_factor_minus {x y : H} : ‖x-y‖ = ‖y-x‖ := by
 theorem applied_norm_factor_minus (I : Iteration H) : ‖x I 1 - I.x_0‖ ^ 2 =  ‖I.x_0 - x I 1‖ ^ 2:= by
   rw [@norm_sub_rev]
 
+theorem aux_simp_1 (a b c: ℝ) (h : a > 0)  : a * (c/a * b) = c * b := by field_simp
+
+theorem aux_simp_2 (a b : ℝ) (h : a ≠ 0): a⁻¹ * (a * b) = b := by field_simp
+
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem aux_simp_3 {a b : H} (h : a ≠ b) : ‖a - b‖ ^ 2 ≠ 0 := by
+  refine pow_ne_zero 2 ?_
+  refine norm_ne_zero_iff.mpr ?_
+  exact sub_ne_zero_of_ne h
+
+theorem aux_simp_4 (I : Iteration H) (n : ℕ) : phi I (n + 1) ≥ n + 1 → phi I (n + 1) > 0:= by
+  intros h
+  linarith
+
+
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
   case zero =>
@@ -130,7 +145,37 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
     constructor
     case left =>
       -- strategy  -> write lemma that has bound induction step as input that proves connection for next phi
-      sorry
+      have hPhiIndStepPos : phi I (n+1) ≥ 0 := by linarith
+      have hMainTerm := mul_le_mul_of_nonneg_left hBoundIndStep hPhiIndStepPos
+      norm_num at hMainTerm
+      rw [aux_simp_1] at hMainTerm
+      have hAppliedComm : phi I (n + 1) * ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 = ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 * phi I (n + 1):= by
+        exact
+          Eq.symm
+            (Lean.Grind.CommRing.mul_comm (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) (phi I (n + 1)))
+      rw [hAppliedComm] at hMainTerm
+      have hInvNormDiffPos : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) > 0 := by
+        have hAxiomCondition := fixed_point_not_encountered_in_sequence I n
+        field_simp
+        apply pow_pos
+        rw [norm_pos_iff]
+        exact sub_ne_zero_of_ne hAxiomCondition
+      have hInvNormDiffPosOrZero : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) ≥  0 := by linarith
+      have hMainTerm := mul_le_mul_of_nonneg_left hMainTerm hInvNormDiffPosOrZero
+      norm_num at hMainTerm
+      rw [aux_simp_2] at hMainTerm
+      have transitionToNextPhi : (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2)⁻¹ * (2 * ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫) = phi I (n+2) - 1 := by
+        unfold phi
+        norm_num
+        field_simp
+      rw [transitionToNextPhi] at hMainTerm
+      have hMainTerm := le_trans hPhiIndStep hMainTerm
+      simp
+      linarith
+      have hAxiom := fixed_point_not_encountered_in_sequence I n
+      exact aux_simp_3 hAxiom
+      case h =>
+        exact aux_simp_4 I n hPhiIndStep
     case right =>
       -- strategy  -> follow steps, maybe recycle commented lemmas below
       sorry
