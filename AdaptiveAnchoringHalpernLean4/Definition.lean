@@ -57,7 +57,7 @@ lemma split_prod (x : H) : (2:ℝ) • x = x + x := by
 
 
 omit [CompleteSpace H] in
-theorem essential_1 (x y : H) : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x,y⟫ := by
+theorem essential_1 {x y : H} : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x,y⟫ := by
   rw [@norm_add_sq_real]
   rw [add_right_comm]
 
@@ -172,6 +172,74 @@ theorem aux_simp_15 {I : Iteration H} {n : Nat} (h : phi I (n + 1) + 1 ≠  0) :
   refine aux_simp_14 ?_
   assumption
 
+omit [CompleteSpace H] in
+theorem aux_simp_16 {a b : ℝ} {x : H} : (a • b⁻¹) • x = b⁻¹ • a • x := by
+  rw [@smul_assoc]
+  rw [@smul_algebra_smul_comm]
+
+omit [CompleteSpace H] in
+theorem factor {a b : ℝ} {x : H} : (a + b) • x = a • x + b • x := by
+  rw [@add_smul]
+
+omit [CompleteSpace H] in
+theorem factor_diff {a b : ℝ} {x : H} : (a - b) • x = a • x - b • x := by
+  rw [@sub_smul]
+
+omit [CompleteSpace H] in
+theorem factor' {a : ℝ} {x y : H} : a • (x - y) = a • x - a • y := by
+  rw [@smul_sub]
+
+omit [CompleteSpace H] in
+theorem aux_simp_17 {a : ℝ} {x y z : H} (h1 : a ≠ 0) : z = a⁻¹ • (a + (1:ℝ)) • x - a⁻¹ • y → z =  x + a⁻¹ • (x - y) := by
+  intros h3
+  have aux1 : a⁻¹ • (a+ 1:ℝ ) • x= ((1:ℝ) + a⁻¹) • x := by
+    rw [propext (inv_smul_eq_iff₀ h1)]
+    have aux1' : a • (1 + a⁻¹) • x = (a * (1 + a⁻¹)) • x  := by rw [@smul_smul]
+    rw [aux1']
+    have aux1'' : (a * (1 + a⁻¹)) = (a + 1) := by
+      refine CancelDenoms.add_subst ?_ ?_
+      rw [propext (mul_eq_left₀ h1)]
+      rw [propext (mul_inv_eq_one₀ h1)]
+    rw [aux1'']
+  rw [aux1] at h3
+  have aux2 : (1 + a⁻¹) • x = x + a⁻¹ • x := by
+    field_simp
+    rw [@add_div]
+    have aux2' : a / a = (1:ℝ) := by rw [propext (div_eq_one_iff_eq h1)]
+    rw [aux2']
+    rw [factor]
+    simp
+  rw [aux2] at h3
+  have aux3 : a⁻¹ • x - a⁻¹ • y  = a⁻¹ • (x - y) := by
+    rw [@factor']
+  have aux4 : z = x + (a⁻¹ • x - a⁻¹ • y) := by
+    rw [h3]
+    abel
+  rw [← factor'] at aux4
+  assumption
+
+
+theorem aux_simp_18 {a b : ℝ}: a = b → a^2=b^2 := by
+  exact fun a_1 ↦ congrFun (congrArg HPow.hPow a_1) 2
+
+omit [CompleteSpace H] in
+theorem factor_norm {a : ℝ} {x : H} : (‖a • x‖) = (|a| • ‖x‖) := by
+  simp
+  rw [norm_smul]
+  simp
+
+theorem aux_simp_19 {a b : ℝ} : (a⁻¹ * b)^2 = 1/(a^2) * b^2 := by
+  field_simp
+
+omit [CompleteSpace H] in
+theorem aux_simp_20 {a : ℝ} {x y : H} : ⟪x , a • y⟫ = a * ⟪x, y⟫ :=
+  by exact real_inner_smul_right x y a
+
+
+theorem aux_simp_21 {a b : ℝ} (h1 : a ≥ 0) (h2 : b ≥ 0): a ≥ b → a^2 ≥ b^2 := by
+  intros h
+  exact (sq_le_sq₀ h2 h1).mpr h
+
 
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
@@ -270,71 +338,66 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
           rw [aux_simp_12] at aux1
           rw [aux_simp_13] at aux1
           rw [aux_simp_15] at aux1
-          have aux1 : I.T (x I n) = (phi I (n + 1) + 1) • (phi I (n + 1))⁻¹ • x I (n + 1) - (phi I (n + 1))⁻¹ • I.x_0 := by
-            sorry
-
-
-
-          --have aux2 : ((phi I (n + 1) + 1) / phi I (n + 1)) • (phi I (n + 1) + 1)⁻¹ •  x I (n + 1) = (phi I (n+1))⁻¹ •  x I (n + 1) := by
-
-
-
-
-
-
-
-
--- @[simp]
--- lemma aux_simp (f : ℝ) : (f + 1) / f = (f + 1) • f⁻¹ := by
---   simp
---   exact rfl
-
--- @[simp]
--- lemma aux_simp_2 (f : ℝ) : f / (f + 1) = f  • (f+1)⁻¹ := by
---   simp
---   exact rfl
-
--- @[simp]
--- lemma aux_simp_3 (f : ℝ) (h1 : f+1 ≠ 0) : (f + 1) • (f + 1)⁻¹ = 1 := by
---   field_simp
-
--- @[simp]
--- lemma aux_simp_4 (f r: ℝ) (h1 : f+1 ≠ 0) : ((f + 1) * r) • (f + 1)⁻¹ = r := by
---   simp
---   field_simp
-
--- @[simp]
--- lemma aux_simp_5 (f: ℝ) (h1 : f+1 ≠ 0): ((f + 1) * f⁻¹) • (f + 1)⁻¹ =  f⁻¹ := by
---   simp only [smul_eq_mul]
---   rw [propext (mul_inv_eq_iff_eq_mul₀ h1)]
---   ring
-
--- @[simp]
--- lemma aux_simp_6 (r : H) (f : ℝ) (h1 : f+1 ≠ 0): ((f + 1) * f⁻¹) • (f + 1)⁻¹ • r =  f⁻¹ • r := by
-
-
-
-
--- @[simp]
--- lemma aux_transformation_first (f : ℝ) (r s t : H) (hFGreaterThanZero: (f > 0)): (1/(f+1)) • r + (f/(f+1)) • s = t  → s = ((f+1)/f) • t - (1/f) • r := by
---   intros h
---   subst t
---   have hFNeqZero : f ≠ 0 := by exact ne_of_gt hFGreaterThanZero
---   have hFPlusOneNeqZero : f+1 ≠ 0 := by
---     apply ne_of_gt
---     linarith
---   simp
-
-
-
--- @[simp]
--- lemma recurrence_rewritten (I : Iteration H) (n : Nat) : I.T (x I n) = x I (n+1) + (1/(phi I (n+1))) • (x I (n+1) - I.x_0) := by
---   have recurrence := recurrence_subst_phi I n
---   refine Eq.symm (add_eq_of_eq_sub ?_)
---   rw [recurrence]
---   refine add_eq_of_eq_sub ?_
-
-
-
--- theorem diff_first_two_terms (I : Iteration H) : ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
--- sorry
+          have aux2 : ((phi I (n + 1) + 1) • (phi I (n + 1))⁻¹) • x I (n + 1) = (phi I (n + 1))⁻¹ • (phi I (n + 1) + 1) • x I (n + 1)  := by
+            rw [aux_simp_16]
+          rw [← aux2]
+          assumption
+          assumption
+        exact aux_simp_17 hPhiIndStepNeqZero hRegularIterationDefinition
+      have hNormConsecSquaredIneq :
+      ‖x I n - x I (n+1)‖^2 ≥ ‖ x I (n+1) - I.T (x I (n+1))‖^2
+      + 2 • (phi I (n+1))⁻¹ • ⟪x I (n+1) - I.T (x I (n+1)) , x I (n+1) - I.x_0 ⟫
+      + (1/(phi I (n+1))^2) • ‖ x I (n+1) - I.x_0‖^2:= by
+        have hNonexpansiveConsec := I.hTNonExpansive (x I n) (x I (n+1))
+        have hConsecTDiff : ‖I.T (x I n) - I.T (x I (n + 1))‖ = ‖ x I (n+1) - I.T (x I (n+1)) + (phi I (n+1))⁻¹ • ( x I (n + 1) - I.x_0)‖ := by
+          rw [hRecurrenceRewritten]
+          abel_nf
+        have hConsecTDiffSquared := aux_simp_18 hConsecTDiff
+        rw [essential_1] at hConsecTDiffSquared
+        rw [norm_smul] at hConsecTDiffSquared
+        simp at hConsecTDiffSquared
+        have hModPhiEqPhi : |phi I (n+1)| = phi I (n+1) := by
+          simp
+          exact le_of_lt hPhiIndStepIsPos
+        rw [hModPhiEqPhi] at hConsecTDiffSquared
+        rw [aux_simp_19] at hConsecTDiffSquared
+        rw [aux_simp_20] at hConsecTDiffSquared
+        have aux1 : 2 * ((phi I (n + 1))⁻¹ * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫)  = 2/(phi I (n+1)) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫:= by field_simp
+        rw [aux1] at hConsecTDiffSquared
+        have hNorm1Pos : ‖I.T (x I n) - I.T (x I (n + 1))‖ ≥ 0 := by simp
+        have hNorm2Pos : ‖x I n - x I (n + 1)‖ ≥ 0 := by simp
+        have hNonexpansiveConsecSquared := aux_simp_21 hNorm2Pos hNorm1Pos hNonexpansiveConsec
+        have hFinalStep :
+        ‖x I n - x I (n + 1)‖ ^ 2 ≥ ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2
+        + 1 / phi I (n + 1) ^ 2 * ‖x I (n + 1) - I.x_0‖ ^ 2
+        + 2 / phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫ := by
+          exact le_of_eq_of_le (id (Eq.symm hConsecTDiffSquared)) hNonexpansiveConsecSquared
+        have auxlocal1 :
+        2 • (phi I (n + 1))⁻¹ • ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫  =
+        2 /phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫  := by field_simp
+        rw [auxlocal1]
+        have auxlocal2 : (1 / phi I (n + 1) ^ 2) • ‖x I (n + 1) - I.x_0‖ ^ 2 = (1 / phi I (n + 1) ^ 2) * ‖x I (n + 1) - I.x_0‖ ^ 2 := by field_simp
+        rw [auxlocal2]
+        have auxlocal3 :
+        ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 + 1 / phi I (n + 1) ^ 2 * ‖x I (n + 1) - I.x_0‖ ^ 2 +
+        2 / phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫ =
+        ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 + 2 / phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫ +
+        1 / phi I (n + 1) ^ 2 * ‖x I (n + 1) - I.x_0‖ ^ 2 := by
+          exact add_right_comm (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2)
+            (1 / phi I (n + 1) ^ 2 * ‖x I (n + 1) - I.x_0‖ ^ 2)
+            (2 / phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫)
+        rw [←auxlocal3]
+        assumption
+      -- start here next
+      have hNormConsecTermsSquaredEq :
+      ‖x I n - x I (n+1)‖^2 =
+      ‖x I n - I.T (x I n)‖
+      - 2/(phi I n + 1) * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫
+      + 1/(phi I n + 1)^2 * ‖I.x_0 - I.T (x I n)‖ :=
+      by
+        rw [recurrence_subst_phi]
+        have auxlocal1 :
+        x I n - ((1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n))  =
+        (x I n - I.T (x I n)) - (1/(phi I n + 1)) • (I.x_0 - I.T (x I n))
+        := by sorry
+          -- todo pick-up here, vezi unde am ramas pe foaie
