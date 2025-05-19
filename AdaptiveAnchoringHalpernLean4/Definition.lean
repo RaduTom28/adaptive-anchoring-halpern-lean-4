@@ -61,6 +61,10 @@ theorem essential_1 {x y : H} : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x
   rw [@norm_add_sq_real]
   rw [add_right_comm]
 
+omit [CompleteSpace H] in
+theorem essential_1' {x y : H} : ‖x - y‖^2 = ‖x‖^2 + ‖y‖^2 - 2 * ⟪x,y⟫ := by
+  rw [@norm_sub_sq_real]
+  rw [@sub_add_eq_add_sub]
 
 omit [InnerProductSpace ℝ H] [CompleteSpace H] in
 theorem comm_operation (x y z : H) : x + x - y - z = (x - y) + (x - z) := by
@@ -80,6 +84,10 @@ theorem inner_factor_minus (x y0 y1 : H) : ⟪ x, y0 - y1 ⟫ = - ⟪ x , y1 - y
   rw [inner_sub_right]
   rw [real_inner_comm]
   simp
+
+omit [CompleteSpace H] in
+theorem inner_factor {x y : H } {a : ℝ} : ⟪x, a • y⟫ = a • ⟪x , y⟫ :=
+  by rw [@inner_smul_right_eq_smul]
 
 
 theorem comparison_util {a b c : ℝ} (h : a + b ≤ b + c) : a ≤ c := by
@@ -240,6 +248,41 @@ theorem aux_simp_21 {a b : ℝ} (h1 : a ≥ 0) (h2 : b ≥ 0): a ≥ b → a^2 �
   intros h
   exact (sq_le_sq₀ h2 h1).mpr h
 
+theorem aux_simp_22 {a : ℝ} (h1 : a+1 ≠ 0) : a/(a+1) = 1 - 1/(a+1) := by
+  rw [one_sub_div h1]
+  simp
+
+omit [CompleteSpace H] in
+theorem aux_simp_24 {x y z : H} {a : ℝ} : x - (a • y + (z - a • z)) = (x - z) - a • (y - z) := by
+  have aux0 : x - (a • y + (z - a • z)) =  x - (a • y + z - a • z) :=  by abel
+  rw [aux0]
+  have aux1 : x - (a • y + z - a • z) = x - a • y - z + a • z := by
+    abel
+  rw [aux1]
+  have aux2 : x - a • y - z + a • z =  x - z + a • z - a • y := by abel
+  rw [aux2]
+  have aux3 : x - z + a • z - a • y = x - z + a • (z - y) := by
+    rw [factor']
+    abel
+  rw [aux3]
+  have aux4 : (a • (z - y)) = - (a • (y - z)) := by
+    rw [@factor']
+    rw [@factor']
+    simp
+  rw [aux4]
+  abel
+
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem aux_simp_25 {x : H} {a : ℝ} : (|a| • ‖x‖) ^ 2 = a^2 * ‖x‖^2 := by
+  simp
+  rw [@sq]
+  ring_nf
+  simp
+  rw [aux_simp_18 rfl]
+  ring
+
+theorem aux_simp_26 {a b c: ℝ} : a * (1/b) • c = a/b * c := by
+  field_simp
 
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
@@ -391,13 +434,39 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
       -- start here next
       have hNormConsecTermsSquaredEq :
       ‖x I n - x I (n+1)‖^2 =
-      ‖x I n - I.T (x I n)‖
-      - 2/(phi I n + 1) * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫
-      + 1/(phi I n + 1)^2 * ‖I.x_0 - I.T (x I n)‖ :=
+      ‖x I n - I.T (x I n)‖^2
+      - 2/(phi I (n + 1)+1) * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫
+      + 1/(phi I (n + 1)+1)^2 * ‖I.x_0 - I.T (x I n)‖^2 :=
       by
         rw [recurrence_subst_phi]
         have auxlocal1 :
         x I n - ((1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n))  =
-        (x I n - I.T (x I n)) - (1/(phi I n + 1)) • (I.x_0 - I.T (x I n))
-        := by sorry
-          -- todo pick-up here, vezi unde am ramas pe foaie
+        (x I n - I.T (x I n)) - (1/(phi I (n+1) + 1)) • (I.x_0 - I.T (x I n))
+        := by
+          have hAuxPhiRapLocal : (phi I (n+1)) / (phi I (n+1) + 1) = 1 - 1/(phi I (n+1) +1) := by
+            rw [aux_simp_22]
+            assumption
+          rw [hAuxPhiRapLocal]
+          rw [factor_diff]
+          field_simp
+          rw [aux_simp_24]
+        rw [auxlocal1]
+        rw [essential_1']
+        rw [inner_factor]
+        rw [factor_norm]
+        rw [aux_simp_25]
+        rw [aux_simp_26]
+        simp
+        exact
+          add_sub_right_comm (‖x I n - I.T (x I n)‖ ^ 2)
+            (((phi I (n + 1) + 1) ^ 2)⁻¹ * ‖I.x_0 - I.T (x I n)‖ ^ 2)
+            (2 / (phi I (n + 1) + 1) * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫)
+      have hCurrentStartDiffNormSq : (1/(phi I (n+1))^2) * ‖x I (n+1) - I.x_0‖^2 = (1/(phi I (n+1) +1)^2) * ‖I.x_0 - I.T (x I n)‖^2 := by
+        have term1 :
+        ‖x I n - I.T (x I n)‖ ^ 2 =
+        ‖x I n - x I (n + 1)‖ ^ 2 + 1/(phi I (n+1))^2 - (2/(phi I (n+1))) * ⟪ x I n - x I (n+1), x I (n+1) - I.x_0 ⟫ :=
+          by
+          rw [hRecurrenceRewritten]
+          have auxlocal1 :
+          ‖x I n - (x I (n + 1) + (phi I (n + 1))⁻¹ • (x I (n + 1) - I.x_0))‖ ^ 2 =
+          ‖ x I n - ‖
