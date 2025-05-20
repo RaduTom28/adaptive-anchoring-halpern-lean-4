@@ -464,9 +464,25 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
       have hCurrentStartDiffNormSq : (1/(phi I (n+1))^2) * ‖x I (n+1) - I.x_0‖^2 = (1/(phi I (n+1) +1)^2) * ‖I.x_0 - I.T (x I n)‖^2 := by
         have term1 :
         ‖x I n - I.T (x I n)‖ ^ 2 =
-        ‖x I n - x I (n + 1)‖ ^ 2 + 1/(phi I (n+1))^2 - (2/(phi I (n+1))) * ⟪ x I n - x I (n+1), x I (n+1) - I.x_0 ⟫ :=
-          by
+        ‖x I n - x I (n + 1)‖ ^ 2 + 1/(phi I (n+1))^2 * ‖x I (n+1) - I.x_0‖^2 - (2/(phi I (n+1))) * ⟪ x I n - x I (n+1), x I (n+1) - I.x_0 ⟫ :=
+        by
           rw [hRecurrenceRewritten]
           have auxlocal1 :
           ‖x I n - (x I (n + 1) + (phi I (n + 1))⁻¹ • (x I (n + 1) - I.x_0))‖ ^ 2 =
-          ‖ x I n - ‖
+          ‖ x I n - x I (n+1)‖^2 + (1/(phi I (n+1))^2) * ‖x I (n+1) - I.x_0‖^2
+          - 2/(phi I (n+1)) * ⟪x I n - x I (n+1), x I (n+1) - I.x_0⟫ :=
+          by
+            have auxlocal1 :
+            ‖x I n - (x I (n + 1) + (phi I (n + 1))⁻¹ • (x I (n + 1) - I.x_0))‖ =
+            ‖(x I n - x I (n+1)) - (1/(phi I (n+1))) • (x I (n+1) - I.x_0)‖ :=
+            by
+              ring_nf
+              abel_nf
+            rw [auxlocal1]
+            rw [essential_1']
+            rw [factor_norm]
+            rw [aux_simp_25]
+            rw [inner_factor]
+            field_simp
+          rw [auxlocal1]
+        -- continue below with term2
