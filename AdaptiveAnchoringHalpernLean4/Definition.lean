@@ -24,7 +24,7 @@ match n with
 
 noncomputable def phi (I : Iteration H)(n : Nat) : ℝ := 2 * ⟪x I (n-1) - I.T (x I (n-1)), I.x_0 - x I (n-1)⟫ / (‖x I (n-1) - I.T (x I (n-1))‖ ^ 2) + 1
 
-axiom fixed_point_not_encountered_in_sequence (I : Iteration H) (n : ℕ) : x I (n + 1) ≠ I.T (x I (n + 1))
+axiom fixed_point_not_encountered_in_sequence (I : Iteration H) (n : ℕ) : x I (n) ≠ I.T (x I (n))
 
 lemma base_case_recurrence (I : Iteration H) : x I 0 = I.x_0 := by
   unfold x
@@ -54,7 +54,6 @@ lemma recurrence_subst_phi (I : Iteration H) (n : Nat) : x I (n+1) = (1 / (phi I
 omit [CompleteSpace H] in
 lemma split_prod (x : H) : (2:ℝ) • x = x + x := by
   exact two_smul ℝ x
-
 
 omit [CompleteSpace H] in
 theorem essential_1 {x y : H} : ‖x + y‖^2 = ‖x‖^2 + ‖y‖^2 + 2 * ⟪x,y⟫ := by
@@ -338,114 +337,110 @@ theorem aux_simp_34 {a b : ℝ} : -a + b = 0 → b = a := by
   rw [neg_add_eq_zero] at h
   exact h.symm
 
+omit [CompleteSpace H] in
+theorem aux_simp_35 {x y z : H} {a : ℝ} : a * ⟪x , y⟫ - a * ⟪x , z⟫ = a * ⟪x , y-z⟫ := by
+    rw [inner_sub_right]
+    rw [@mul_sub]
 
-lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
-  induction n
-  case zero =>
-    constructor
-    case left =>
-      unfold phi
-      simp
-      rw [base_case_recurrence]
-      simp
-    case right =>
-      have hRecFirstStep : I.T I.x_0 = (2:ℝ) • x I 1 - I.x_0 := by
-        rw [first_recurrence_term]
-        simp
-      have hNormSqConsecTermDiffExpanded: ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
-        rw [hRecFirstStep]
-        rw [split_prod]
-        rw [comm_operation]
-        rw [norm_add_sq_real]
-        rw [add_right_comm]
-        rw [real_inner_comm]
-        simp
-        rw [add_comm]
-      have hConsecSquareNonexpansive := square_nonexpansive I I.x_0 (x I 1)
-      simp
-      rw [first_phi]
-      simp
-      rw [inner_factor_minus] at hNormSqConsecTermDiffExpanded
-      simp at hNormSqConsecTermDiffExpanded
-      rw [hNormSqConsecTermDiffExpanded] at hConsecSquareNonexpansive
-      norm_num at hConsecSquareNonexpansive
-      rw [applied_norm_factor_minus] at hConsecSquareNonexpansive
-      exact comparison_util hConsecSquareNonexpansive
-  case succ n exp =>
-    have hPhiIndStep := And.left exp
-    have hBoundIndStep := And.right exp
-    constructor
-    case left =>
-      -- strategy  -> write lemma that has bound induction step as input that proves connection for next phi
-      have hPhiIndStepPos : phi I (n+1) ≥ 0 := by linarith
-      have hMainTerm := mul_le_mul_of_nonneg_left hBoundIndStep hPhiIndStepPos
-      norm_num at hMainTerm
-      rw [aux_simp_1] at hMainTerm
-      have hAppliedComm : phi I (n + 1) * ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 = ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 * phi I (n + 1):= by
-        exact
-          Eq.symm
-            (Lean.Grind.CommRing.mul_comm (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) (phi I (n + 1)))
-      rw [hAppliedComm] at hMainTerm
-      have hInvNormDiffPos : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) > 0 := by
-        have hAxiomCondition := fixed_point_not_encountered_in_sequence I n
-        field_simp
-        apply pow_pos
-        rw [norm_pos_iff]
-        exact sub_ne_zero_of_ne hAxiomCondition
-      have hInvNormDiffPosOrZero : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) ≥  0 := by linarith
-      have hMainTerm := mul_le_mul_of_nonneg_left hMainTerm hInvNormDiffPosOrZero
-      norm_num at hMainTerm
-      rw [aux_simp_2] at hMainTerm
-      have transitionToNextPhi : (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2)⁻¹ * (2 * ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫) = phi I (n+2) - 1 := by
-        unfold phi
-        norm_num
-        field_simp
-      rw [transitionToNextPhi] at hMainTerm
-      have hMainTerm := le_trans hPhiIndStep hMainTerm
-      simp
+theorem aux_simp_36 {a b c d : ℝ} : (a + b = c - d) ↔ (a - c = -b -d) := by
+  constructor
+  case mp =>
+    intro h
+    calc
+      a - c = a + b - c - b := by ring
+          _ = c - d - c - b := by rw [h]
+          _ = - b - d := by ring
+  case mpr =>
+    intro h
+    calc
+      a + b = a - c + b + c := by ring
+          _ =  -b - d + b + c := by rw [h]
+    ring
+
+theorem aux_simp_37 {a b : ℝ} : a + b ≤ 0 ↔ -b ≥ a := by
+  constructor
+  case mp =>
+    intro h
+    exact le_neg_iff_add_nonpos_right.mpr h
+  case mpr =>
+    intro h
+    exact le_neg_iff_add_nonpos_right.mp h
+
+
+theorem recurrence_rewritten {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n + 1) : I.T (x I n) = x I (n+1) + (phi I (n+1)) ⁻¹ • (x I (n+1) - I.x_0) := by
+
+    have hPhiIndStepIsPos := aux_simp_4 I n h
+    have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+    have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+    have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
+
+    have hRegularIterationDefinition := Eq.symm (recurrence_subst_phi I n)
+    have hRegularIterationDefinition := aux_simp_5 hRegularIterationDefinition
+    have hPhiRapNeqZero : (phi I (n + 1) / (phi I (n + 1) + 1)) ≠ 0 := by
+      have aux1 := aux_simp_4 I n h
+      have aux2 := aux_simp_7 aux1
+      have aux3 := aux_simp_8 aux1 aux2
       linarith
-      have hAxiom := fixed_point_not_encountered_in_sequence I n
-      exact aux_simp_3 hAxiom
-      case h =>
-        exact aux_simp_4 I n hPhiIndStep
-    case right =>
-      have hPhiIndStepIsPos := aux_simp_4 I n hPhiIndStep
-      have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
-      have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
-      have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
-      have hRecurrenceRewritten : I.T (x I n) = x I (n+1) + (phi I (n+1)) ⁻¹ • (x I (n+1) - I.x_0) := by
-        have hRegularIterationDefinition := Eq.symm (recurrence_subst_phi I n)
-        have hRegularIterationDefinition := aux_simp_5 hRegularIterationDefinition
-        have hPhiRapNeqZero : (phi I (n + 1) / (phi I (n + 1) + 1)) ≠ 0 := by
-          have aux1 := aux_simp_4 I n hPhiIndStep
-          have aux2 := aux_simp_7 aux1
-          have aux3 := aux_simp_8 aux1 aux2
-          linarith
-        have hPhiRapNeqZeroInv : ( (phi I (n + 1) + 1)/phi I (n + 1) ) ≠ 0 := by
-          have aux1 := aux_simp_4 I n hPhiIndStep
-          have aux2 := aux_simp_7 aux1
-          have aux3 := aux_simp_8 aux2 aux1
-          linarith
-        have hRegularIterationDefinition := aux_simp_6 hPhiRapNeqZero hRegularIterationDefinition
-        field_simp at hRegularIterationDefinition
-        have hRegularIterationDefinition : I.T (x I n) = (phi I (n+1))⁻¹ • (phi I (n+1) +1) • x I (n + 1) - (phi I (n+1))⁻¹ • I.x_0 := by
-          norm_num at hRegularIterationDefinition
-          have aux1 := aux_simp_10 hRegularIterationDefinition
-          norm_num at aux1
-          field_simp at aux1
-          rw [aux_simp_12] at aux1
-          rw [aux_simp_13] at aux1
-          rw [aux_simp_15] at aux1
-          have aux2 : ((phi I (n + 1) + 1) • (phi I (n + 1))⁻¹) • x I (n + 1) = (phi I (n + 1))⁻¹ • (phi I (n + 1) + 1) • x I (n + 1)  := by
-            rw [aux_simp_16]
-          rw [← aux2]
-          assumption
-          assumption
-        exact aux_simp_17 hPhiIndStepNeqZero hRegularIterationDefinition
-      have hNormConsecSquaredIneq :
-      ‖x I n - x I (n+1)‖^2 ≥ ‖ x I (n+1) - I.T (x I (n+1))‖^2
-      + 2 • (phi I (n+1))⁻¹ • ⟪x I (n+1) - I.T (x I (n+1)) , x I (n+1) - I.x_0 ⟫
-      + (1/(phi I (n+1))^2) • ‖ x I (n+1) - I.x_0‖^2:= by
+    have hPhiRapNeqZeroInv : ( (phi I (n + 1) + 1)/phi I (n + 1) ) ≠ 0 := by
+      have aux1 := aux_simp_4 I n h
+      have aux2 := aux_simp_7 aux1
+      have aux3 := aux_simp_8 aux2 aux1
+      linarith
+    have hRegularIterationDefinition := aux_simp_6 hPhiRapNeqZero hRegularIterationDefinition
+    field_simp at hRegularIterationDefinition
+    have hRegularIterationDefinition : I.T (x I n) = (phi I (n+1))⁻¹ • (phi I (n+1) +1) • x I (n + 1) - (phi I (n+1))⁻¹ • I.x_0 := by
+      norm_num at hRegularIterationDefinition
+      have aux1 := aux_simp_10 hRegularIterationDefinition
+      norm_num at aux1
+      field_simp at aux1
+      rw [aux_simp_12] at aux1
+      rw [aux_simp_13] at aux1
+      rw [aux_simp_15] at aux1
+      have aux2 : ((phi I (n + 1) + 1) • (phi I (n + 1))⁻¹) • x I (n + 1) = (phi I (n + 1))⁻¹ • (phi I (n + 1) + 1) • x I (n + 1)  := by
+        rw [aux_simp_16]
+      rw [← aux2]
+      assumption
+      assumption
+    exact aux_simp_17 hPhiIndStepNeqZero hRegularIterationDefinition
+
+theorem phi_rewritten {I : Iteration H} (n : ℕ) : phi I (n+1) * ‖x I n - I.T (x I n)‖^2 = 2 * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫ - ‖x I n - I.T (x I n)‖^2 := by
+  unfold phi
+  norm_num
+  have aux1 : ‖x I n - I.T (x I n)‖ ^ 2 ≠ 0 := by
+    have hFixedNotEncountered := fixed_point_not_encountered_in_sequence I (n)
+    exact aux_simp_3 hFixedNotEncountered
+  field_simp
+  have aux2 :
+  2 * ⟪x I n - I.T (x I n), I.x_0 - x I n⟫ - 2 * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫ =
+  -2 * ‖x I n - I.T (x I n)‖^2
+  := by
+    rw[aux_simp_35]
+    norm_num
+    rw[inner_factor_minus]
+    simp
+    rw [← @real_inner_self_eq_norm_sq]
+  rw [aux_simp_36]
+  rw [aux_simp_35]
+  calc
+    2 * ⟪x I n - I.T (x I n), I.x_0 - x I n - (I.x_0 - I.T (x I n))⟫ =
+    2 * ⟪x I n - I.T (x I n), I.T (x I n) - x I n⟫
+    := by rw [@sub_sub_sub_cancel_left]
+    _ = 2 * -⟪x I n - I.T (x I n), x I n - I.T (x I n)⟫
+    := by rw [inner_factor_minus]
+    _ = -2 * ⟪x I n - I.T (x I n), x I n - I.T (x I n)⟫
+    := by simp
+    _ = -2 * ‖x I n - I.T (x I n)‖^2
+    := by rw [← @real_inner_self_eq_norm_sq]
+  ring
+
+theorem norm_consec_squared_ineq {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n + 1) : ‖x I n - x I (n+1)‖^2 ≥ ‖ x I (n+1) - I.T (x I (n+1))‖^2 + 2 • (phi I (n+1))⁻¹ • ⟪x I (n+1) - I.T (x I (n+1)) , x I (n+1) - I.x_0 ⟫ + (1/(phi I (n+1))^2) • ‖ x I (n+1) - I.x_0‖^2 := by
+
+        have hPhiIndStepIsPos := aux_simp_4 I n h
+        have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+        have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+        have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
+        have hRecurrenceRewritten := recurrence_rewritten n h
+
         have hNonexpansiveConsec := I.hTNonExpansive (x I n) (x I (n+1))
         have hConsecTDiff : ‖I.T (x I n) - I.T (x I (n + 1))‖ = ‖ x I (n+1) - I.T (x I (n+1)) + (phi I (n+1))⁻¹ • ( x I (n + 1) - I.x_0)‖ := by
           rw [hRecurrenceRewritten]
@@ -486,13 +481,20 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
             (2 / phi I (n + 1) * ⟪x I (n + 1) - I.T (x I (n + 1)), x I (n + 1) - I.x_0⟫)
         rw [←auxlocal3]
         assumption
-      -- start here next
-      have hNormConsecTermsSquaredEq :
+
+theorem norm_consec_terms_squared_eq {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n + 1) :
       ‖x I n - x I (n+1)‖^2 =
       ‖x I n - I.T (x I n)‖^2
       - 2/(phi I (n + 1)+1) * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫
       + 1/(phi I (n + 1)+1)^2 * ‖I.x_0 - I.T (x I n)‖^2 :=
       by
+
+        have hPhiIndStepIsPos := aux_simp_4 I n h
+        have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+        have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+        have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
+        have hRecurrenceRewritten := recurrence_rewritten n h
+
         rw [recurrence_subst_phi]
         have auxlocal1 :
         x I n - ((1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n))  =
@@ -516,7 +518,18 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
           add_sub_right_comm (‖x I n - I.T (x I n)‖ ^ 2)
             (((phi I (n + 1) + 1) ^ 2)⁻¹ * ‖I.x_0 - I.T (x I n)‖ ^ 2)
             (2 / (phi I (n + 1) + 1) * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫)
-      have hCurrentStartDiffNormSq : (1/(phi I (n+1))^2) * ‖x I (n+1) - I.x_0‖^2 = (1/(phi I (n+1) +1)^2) * ‖I.x_0 - I.T (x I n)‖^2 := by
+
+theorem current_start_diff_norm_sq  {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n + 1) : (1/(phi I (n+1))^2) * ‖x I (n+1) - I.x_0‖^2 = (1/(phi I (n+1) +1)^2) * ‖I.x_0 - I.T (x I n)‖^2 := by
+
+        have hPhiIndStepIsPos := aux_simp_4 I n h
+        have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+        have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+        have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
+
+        have hRecurrenceRewritten : I.T (x I n) = x I (n+1) + (phi I (n+1)) ⁻¹ • (x I (n+1) - I.x_0) := recurrence_rewritten n h
+        have hNormConsecSquaredIneq := norm_consec_squared_ineq n h
+        have hNormConsecTermsSquaredEq := norm_consec_terms_squared_eq n h
+
         have term1 :
         ‖x I n - I.T (x I n)‖ ^ 2 =
         ‖x I n - x I (n + 1)‖ ^ 2 + 1/(phi I (n+1))^2 * ‖x I (n+1) - I.x_0‖^2 - (2/(phi I (n+1))) * ⟪ x I n - x I (n+1), x I (n+1) - I.x_0 ⟫ :=
@@ -644,7 +657,168 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
         have hMainTerm2 :
         1 / (phi I (n + 1) + 1) ^ 2 * ‖I.x_0 - I.T (x I n)‖ ^ 2 = 1 / phi I (n + 1) ^ 2 * ‖x I (n + 1) - I.x_0‖ ^ 2 := aux_simp_34 hMainTerm
         rw [hMainTerm2]
-      -- continue here
+
+theorem norm_sq_diff_phi {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n + 1) : ‖x I n - I.T (x I n)‖ ^ 2 = 2/(phi I (n+1) + 1) * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫ := by
+  have hPhiIndStepIsPos := aux_simp_4 I n h
+  have hPhiIndStepNeqZero : phi I (n + 1) ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepIsPos)
+  have hPhiIndStepPlusOneIsPos : phi I (n + 1) + 1 > 0 := by exact aux_simp_7 hPhiIndStepIsPos
+  have hPhiIndStepPlusOneIsNeqZero : phi I (n + 1) + 1 ≠  0 := by exact Ne.symm (ne_of_lt hPhiIndStepPlusOneIsPos)
+  have hPhiRw : phi I (n+1) * ‖x I n - I.T (x I n)‖^2 + ‖x I n - I.T (x I n)‖^2 = 2 * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫ := by
+    rw [@phi_rewritten]
+    simp
+  have aux1 : (phi I (n + 1) + 1)/(phi I (n + 1) + 1) = 1 := by rw [propext
+      (div_eq_one_iff_eq hPhiIndStepPlusOneIsNeqZero)]
+  have hPhiRw1 : (phi I (n+1) + 1) * ‖x I n - I.T (x I n)‖^2 = 2 * ⟪x I n - I.T (x I n) , I.x_0 - I.T (x I n)⟫ := by
+      calc
+        (phi I (n + 1) + 1) * ‖x I n - I.T (x I n)‖ ^ 2 =
+            phi I (n + 1)  * ‖x I n - I.T (x I n)‖ ^ 2 + ‖x I n - I.T (x I n)‖ ^ 2 :=
+            by rw [@add_one_mul]
+        _ =  2 * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫ := by rw [hPhiRw]
+  calc
+    ‖x I n - I.T (x I n)‖ ^ 2 = 1 * ‖x I n - I.T (x I n)‖ ^ 2 := by simp
+    _ = (phi I (n + 1) + 1)/(phi I (n + 1) + 1) * ‖x I n - I.T (x I n)‖ ^ 2 := by rw [aux1]
+    _ = (phi I (n + 1) + 1)⁻¹ * ((phi I (n + 1) + 1) * ‖x I n - I.T (x I n)‖ ^ 2) := by field_simp
+    _ = (phi I (n + 1) + 1)⁻¹ *  2 * ⟪x I n - I.T (x I n), I.x_0 - I.T (x I n)⟫ := by
+      rw [hPhiRw1]
+      field_simp
+  field_simp
+
+
+lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
+  induction n
+  case zero =>
+    constructor
+    case left =>
+      unfold phi
+      simp
+      rw [base_case_recurrence]
+      simp
+    case right =>
+      have hRecFirstStep : I.T I.x_0 = (2:ℝ) • x I 1 - I.x_0 := by
+        rw [first_recurrence_term]
+        simp
+      have hNormSqConsecTermDiffExpanded: ‖ I.T (I.x_0) - I.T (x I 1)‖ ^ 2 = ‖x I 1 - I.T (x I 1)‖^2 + ‖x I 1 - I.x_0‖^2 + 2 * ⟪ x I 1 - I.T (x I 1), x I 1 - I.x_0 ⟫ := by
+        rw [hRecFirstStep]
+        rw [split_prod]
+        rw [comm_operation]
+        rw [norm_add_sq_real]
+        rw [add_right_comm]
+        rw [real_inner_comm]
+        simp
+        rw [add_comm]
+      have hConsecSquareNonexpansive := square_nonexpansive I I.x_0 (x I 1)
+      simp
+      rw [first_phi]
+      simp
+      rw [inner_factor_minus] at hNormSqConsecTermDiffExpanded
+      simp at hNormSqConsecTermDiffExpanded
+      rw [hNormSqConsecTermDiffExpanded] at hConsecSquareNonexpansive
+      norm_num at hConsecSquareNonexpansive
+      rw [applied_norm_factor_minus] at hConsecSquareNonexpansive
+      exact comparison_util hConsecSquareNonexpansive
+  case succ n exp =>
+
+    -- left
+    have hPhiIndStep := And.left exp
+    have hBoundIndStep := And.right exp
+    have hPhiIndStepPos : phi I (n+1) ≥ 0 := by linarith
+    have hMainTerm := mul_le_mul_of_nonneg_left hBoundIndStep hPhiIndStepPos
+    norm_num at hMainTerm
+    rw [aux_simp_1] at hMainTerm
+    have hAppliedComm : phi I (n + 1) * ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 = ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 * phi I (n + 1):= by
+        exact
+          Eq.symm
+            (Lean.Grind.CommRing.mul_comm (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) (phi I (n + 1)))
+    rw [hAppliedComm] at hMainTerm
+    have hInvNormDiffPos : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) > 0 := by
+        have hAxiomCondition := fixed_point_not_encountered_in_sequence I (n+1)
+        field_simp
+        apply pow_pos
+        rw [norm_pos_iff]
+        exact sub_ne_zero_of_ne hAxiomCondition
+    have hInvNormDiffPosOrZero : 1/(‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2) ≥  0 := by linarith
+    have hMainTerm := mul_le_mul_of_nonneg_left hMainTerm hInvNormDiffPosOrZero
+    norm_num at hMainTerm
+    rw [aux_simp_2] at hMainTerm
+    have transitionToNextPhi : (‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2)⁻¹ * (2 * ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫) = phi I (n+2) - 1 := by
+        unfold phi
+        norm_num
+        field_simp
+    rw [transitionToNextPhi] at hMainTerm
+    have hMainTerm := le_trans hPhiIndStep hMainTerm
+    have hConclusionPhi : ↑n + 2 ≤ phi I (n + 2) := by linarith
+    have hConclusionPhiPrepped : phi I (n + 1 + 1) ≥ ↑(n + 1) + 1 := by
+      abel_nf
+      simp
+      abel_nf
+      simp
+      assumption
+
+    --right
+    have hRecurrenceRewritten : I.T (x I (n+1)) = x I (n+2) + (phi I (n+2)) ⁻¹ • (x I (n+2) - I.x_0) := recurrence_rewritten (n+1) hConclusionPhiPrepped
+    have hNormConsecSquaredIneq := norm_consec_squared_ineq (n+1) hConclusionPhiPrepped
+    have hNormConsecTermsSquaredEq := norm_consec_terms_squared_eq (n+1) hConclusionPhiPrepped
+    have hCurrentStartDiffNormSq := current_start_diff_norm_sq (n+1) hConclusionPhiPrepped
+    have hPhiDefinitionRewritten : phi I (n+2) * ‖x I (n+1) - I.T (x I (n+1))‖^2 = 2 * ⟪x I (n+1) - I.T (x I (n+1)) , I.x_0 - I.T (x I (n+1))⟫ - ‖x I (n+1) - I.T (x I (n+1))‖^2 := phi_rewritten (n+1)
+    have hPhiNormSqPhi :=  norm_sq_diff_phi (n+1) hConclusionPhiPrepped
+
+    rw[hNormConsecTermsSquaredEq] at hNormConsecSquaredIneq
+    rw[← hCurrentStartDiffNormSq] at hNormConsecSquaredIneq
+    simp at hNormConsecSquaredIneq
+    rw[hPhiNormSqPhi] at hNormConsecSquaredIneq
+    field_simp at hNormConsecSquaredIneq
+    abel_nf at hNormConsecSquaredIneq
+    simp at hNormConsecSquaredIneq
+    rw [←sub_eq_add_neg] at hNormConsecSquaredIneq
+    rw [←sub_eq_add_neg] at hNormConsecSquaredIneq
+
+
+    constructor
+    case left =>
+      assumption
+    case right =>
+      simp
+      abel_nf
+      simp
+      rw [←sub_eq_add_neg]
+      rw [aux_simp_37] at hNormConsecSquaredIneq
+      field_simp at hNormConsecSquaredIneq
+      have auxlocal1 :
+      -(2 * ⟪x I (n + 2) - I.T (x I (n + 2)), x I (n + 2) - I.x_0⟫) / phi I (n + 2) =
+       2 / phi I (n + 2) * ⟪x I (n + 2) - I.T (x I (n + 2)), -x I (n + 2) + I.x_0⟫ := by
+        ring_nf
+        rw [inner_factor_minus]
+        simp
+        field_simp
+        rw [@neg_add_eq_sub]
+      rw [auxlocal1] at hNormConsecSquaredIneq
+      assumption
+
+    --loose ends
+
+    have hNormDiffNeqZero : ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 ≠ 0 := by
+      have hFixedNotEncountered := fixed_point_not_encountered_in_sequence I (n+1)
+      exact aux_simp_3 hFixedNotEncountered
+    assumption
+
+    have hPhiIndStepIsPos := aux_simp_4 I n hPhiIndStep
+    assumption
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
