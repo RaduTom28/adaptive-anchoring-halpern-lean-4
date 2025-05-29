@@ -683,6 +683,19 @@ theorem norm_sq_diff_phi {I : Iteration H} (n : ℕ) (h : phi I (n + 1) ≥ ↑n
       field_simp
   field_simp
 
+omit [InnerProductSpace ℝ H] [CompleteSpace H] in
+theorem norm_sum_ineq_split ( x y : H ) : ‖x + y‖ ≤ ‖x‖ + ‖y‖ := by
+  exact norm_add_le x y
+
+omit [CompleteSpace H] in
+theorem norm_sum_ineq_split_factor_scalars  (a b : ℝ ) (x y : H ) (h1 : a ≥ 0) (h2 : b ≥ 0) : ‖a•x + b•y‖ ≤ a*‖x‖ + b*‖y‖ := by
+  have aux1 : ‖a•x + b•y‖ ≤ ‖a • x‖ + ‖b •y‖ :=  norm_sum_ineq_split (a • x) (b • y)
+  rw [factor_norm , factor_norm] at aux1
+  simp at aux1
+  have aux2 : |a| = a := by rw [abs_of_nonneg h1]
+  have aux3 : |b| = b := by rw [abs_of_nonneg h2]
+  rw [aux2, aux3] at aux1
+  assumption
 
 lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(x I (n+1)) - I.T (x I (n+1))‖^2 ≤ (2/(phi I (n+1))) • ⟪ (x I (n+1)) - I.T (x I (n+1)) , I.x_0 - x I (n+1)⟫) := by
   induction n
@@ -805,54 +818,73 @@ lemma first_bounds (I : Iteration H) (n : ℕ) : (phi I (n+1) ≥ n+1) ∧ (‖(
     assumption
 
 
+theorem term_1_neq_0 {I : Iteration H} (n : ℕ) : phi I (n + 1) + 1 ≠ 0 := by
+  have auxlocal1 := And.left (first_bounds I (n))
+  have auxlocal2 : phi I (n + 1) ≠ 0 := by linarith
+  linarith
 
 
 
+lemma second_bounds (I : Iteration H) (n : ℕ) (p : H) (hPFixed : I.T p = p) : ‖x I (n+1) - p‖ ≤ max ‖I.x_0 - p‖ ‖x I n - p‖ := by
 
+  have aux1 : phi I (n + 1) + 1 ≠ 0 := term_1_neq_0 n
+  have aux2 : 1/(phi I (n + 1) + 1) ≠ 0 := by exact one_div_ne_zero aux1
+  have aux3 : phi I (n + 1)/(phi I (n + 1) + 1) ≠ 0 := by
+    have auxlocal1 := And.left (first_bounds I (n))
+    have auxlocal2 : phi I (n + 1) ≠ 0 := by linarith
+    exact div_ne_zero auxlocal2 aux1
+  have aux4 : 1/(phi I (n + 1) + 1) ≥ 0 := by
+    have auxlocal1 := And.left (first_bounds I (n))
+    simp
+    linarith
+  have aux5 : (phi I (n+1))/(phi I (n + 1) + 1) ≥ 0 := by
+    have auxlocal1 := And.left (first_bounds I (n))
+    simp
+    refine div_nonneg ?_ ?_
+    linarith
+    linarith
 
+  have hStartingPoint : ‖x I (n+1) - p‖ =
+  ‖(1/(phi I (n+1)+1)) • (I.x_0 - p) + (phi I (n+1)/(phi I (n+1) +1)) • (I.T (x I n) - p)‖ := by
+    rw [recurrence_subst_phi]
+    calc
+      ‖(1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) - p‖ =
+      ‖(1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) - 1•p‖ := by abel_nf
+      _=‖(1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) - ((phi I (n + 1) + 1)/(phi I (n + 1) + 1))•p‖ := by field_simp
 
+    have aux1local : ((phi I (n + 1) + 1) / (phi I (n + 1) + 1)) • p =
+    (phi I (n+1) / (phi I (n+1) + 1)) • p + (1/ (phi I (n+1) + 1)) • p := by
+      calc
+        ((phi I (n + 1) + 1) / (phi I (n + 1) + 1)) • p =
+        (phi I (n+1)/(phi I (n + 1) + 1) + 1 / (phi I (n + 1) + 1)) • p :=
+          by field_simp
+        _ = (phi I (n + 1) / (phi I (n + 1) + 1)) • p + (1 / (phi I (n + 1) + 1)) • p :=
+          by rw [factor]
+    rw [aux1local]
+    calc
+      ‖(1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) -
+              ((phi I (n + 1) / (phi I (n + 1) + 1)) • p + (1 / (phi I (n + 1) + 1)) • p)‖ =
+      ‖(1 / (phi I (n + 1) + 1)) • I.x_0 + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) -
+              (phi I (n + 1) / (phi I (n + 1) + 1)) • p - (1 / (phi I (n + 1) + 1)) • p‖
+       :=
+        by abel_nf
+      _=‖(1 / (phi I (n + 1) + 1)) • I.x_0 - (1 / (phi I (n + 1) + 1)) • p + (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) -
+        (phi I (n + 1) / (phi I (n + 1) + 1)) • p‖ :=
+          by abel_nf
+      _=‖(1 / (phi I (n + 1) + 1)) • (I.x_0 - p) + (phi I (n + 1) / (phi I (n + 1) + 1)) • (I.T (x I n) - p)‖ :=
+          by
+            rw [←factor']
+            simp
+            have auxlocal1 :
+              (phi I (n + 1) / (phi I (n + 1) + 1)) • I.T (x I n) -
+              (phi I (n + 1) / (phi I (n + 1) + 1)) • p = (phi I (n + 1) / (phi I (n + 1) + 1)) • (I.T (x I n) - p) :=
+              by rw [←factor']
 
+            rw [←auxlocal1]
+            abel_nf
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        -- continue below with term2
+  have term1 :=
+    norm_sum_ineq_split_factor_scalars (1 / (phi I (n + 1) + 1)) (phi I (n + 1) / (phi I (n + 1) + 1)) (I.x_0 - p) (I.T (x I n) - p) (aux4) (aux5)
+  rw [← hStartingPoint] at term1
+  calc
+    ‖x I (n + 1) - p‖ ≤ 1 / (phi I (n + 1) + 1) * ‖I.x_0 - p‖ + phi I (n + 1) / (phi I (n + 1) + 1) * ‖I.T (x I n) - p‖ := by assumption
