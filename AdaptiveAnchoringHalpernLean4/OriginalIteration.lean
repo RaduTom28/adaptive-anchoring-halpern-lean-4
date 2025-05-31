@@ -823,7 +823,62 @@ theorem term_1_neq_0 {I : Iteration H} (n : ℕ) : phi I (n + 1) + 1 ≠ 0 := by
   have auxlocal2 : phi I (n + 1) ≠ 0 := by linarith
   linarith
 
+theorem nonexpansive_applied_for_fixed (I : Iteration H) (p : H) (h : I.T p = p) (n : ℕ) : ‖I.T (x I n) - p‖ ≤ ‖x I n - p‖ := by
+  have hNonexpansive := I.hTNonExpansive (x I n) p
+  rw [h] at hNonexpansive
+  assumption
 
+
+theorem max_ineq {a b x y : ℝ} (h1: a > 0 ∧ a < 1) (h2: b > 0 ∧ b < 1) (h3: a + b = 1) : a * x + b * y ≤ max x y := by
+  have h1' := And.left h1
+  have h1'' := And.right h1
+  have h2' :=  And.left h2
+  have h2'' := And.right h2
+  rw [@le_max_iff]
+  have h := lt_or_ge x y
+  cases h with
+    |inl hinl =>
+      rw [@or_comm]
+      constructor
+      calc
+        a * x + b * y ≤ a * y + b * y := by
+          rw [@add_le_add_iff_right]
+          field_simp
+          exact le_of_lt hinl
+        _ ≤ (a + b) * y := by
+          ring_nf
+          simp
+        _ ≤ y := by
+          rw [h3]
+          simp
+    |inr hinr =>
+      constructor
+      calc
+        a * x + b * y ≤ a * x + b * x := by
+          rw [@add_le_add_iff_left]
+          field_simp
+          exact hinr
+        _ ≤ (a + b) * x := by
+          ring_nf
+          simp
+        _ ≤ x := by
+          rw [h3]
+          simp
+
+
+theorem rap_ineq {a : ℝ} (h1 : a > 1) : 1/a < 1 := by
+  refine (one_div_lt ?_ ?_).mp ?_
+  simp
+  linarith
+  simp
+  assumption
+
+
+theorem rap_ineq_2 {a b : ℝ} (h1 : a ≥ 1) (h2 : b > 0) : a * b > 0 := by
+  have h3 :  a > 0 := by linarith
+  simp
+  field_simp
+  assumption
 
 lemma second_bounds (I : Iteration H) (n : ℕ) (p : H) (hPFixed : I.T p = p) : ‖x I (n+1) - p‖ ≤ max ‖I.x_0 - p‖ ‖x I n - p‖ := by
 
@@ -888,3 +943,69 @@ lemma second_bounds (I : Iteration H) (n : ℕ) (p : H) (hPFixed : I.T p = p) : 
   rw [← hStartingPoint] at term1
   calc
     ‖x I (n + 1) - p‖ ≤ 1 / (phi I (n + 1) + 1) * ‖I.x_0 - p‖ + phi I (n + 1) / (phi I (n + 1) + 1) * ‖I.T (x I n) - p‖ := by assumption
+    _≤1 / (phi I (n + 1) + 1) * ‖I.x_0 - p‖ + phi I (n + 1) / (phi I (n + 1) + 1) * ‖x I n - p‖ := by
+      have aux1 := nonexpansive_applied_for_fixed (I) (p) (hPFixed) n
+      simp
+      exact mul_le_mul_of_nonneg_left aux1 aux5
+
+  have hPrepMaxIneq1 : (1 / (phi I (n + 1) + 1) > 0) ∧ (1 / (phi I (n + 1) + 1)  < 1) := by
+    constructor
+    case left =>
+      exact lt_of_le_of_ne aux4 (id (Ne.symm aux2))
+    case right =>
+      have auxlocal1 := And.left (first_bounds I (n))
+      have auxlocal2 : phi I (n + 1) >= 1 := by
+        linarith
+      have auxlocal3 : phi I (n+1) + 1 > 1 := by
+        simp
+        exact aux_simp_4 I n auxlocal1
+      exact rap_ineq auxlocal3
+
+  have hPrepMaxIneq2 : (phi I (n + 1) / (phi I (n + 1) + 1) > 0) ∧ (phi I (n + 1) / (phi I (n + 1) + 1)  < 1) := by
+    constructor
+    case left =>
+      have auxlocal1 := And.left hPrepMaxIneq1
+      have auxdlocal2 := And.left (first_bounds I (n))
+      have auxlocal3 : phi I (n + 1) >= 1 := by linarith
+      have auxlocal4 : phi I (n + 1) / (phi I (n + 1) + 1) = phi I (n + 1)  *  1/  (phi I (n + 1) + 1) := by
+        simp
+      rw [auxlocal4]
+      have auxlocal5 := rap_ineq_2 auxlocal3 auxlocal1
+      field_simp
+      field_simp at auxlocal5
+      assumption
+    case right =>
+      have auxdlocal1 := And.left (first_bounds I (n))
+      have auxlocal2 :  phi I (n + 1) > 0 := by linarith
+      have auxlocal3 : phi I (n + 1) < (phi I (n + 1) + 1) := by
+        simp
+      have auxlocal4  : phi I (n + 1)+1 > 0 := by linarith
+      exact Bound.div_lt_one_of_pos_of_lt auxlocal4 auxlocal3
+
+  have hPrepMaxIneq3 : 1/(phi I (n + 1) + 1) + phi I (n + 1) / (phi I (n + 1) + 1) = 1 := by
+    field_simp
+    abel
+
+  exact max_ineq hPrepMaxIneq1 hPrepMaxIneq2 hPrepMaxIneq3
+
+
+theorem max_ineq_aux {a b  : ℝ} (h : a ≤ b) : max b a = b := by
+  rw [sup_of_le_left h]
+
+lemma iteration_bounded (I : Iteration H) (n : ℕ) (p : H) (hPFixed : I.T p = p) : ‖x I n - p‖ ≤ ‖I.x_0 - p‖ := by
+  induction n
+  case zero =>
+    rw [base_case_recurrence]
+  case succ n hind =>
+    have hBounds := second_bounds I n p hPFixed
+    have hMax := max_ineq_aux hind
+    rw [hMax] at hBounds
+    assumption
+
+lemma iteration_converges_condition_1 (I : Iteration H) (n : ℕ) : ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 2/(phi I (n+1)) * ‖I.x_0 - x I (n+1)‖ := by
+  have h1 := And.right (first_bounds I n)
+  field_simp at h1
+  have h2 : ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫ ≤
+  ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ := by
+    exact real_inner_le_norm (x I (n + 1) - I.T (x I (n + 1))) (I.x_0 - x I (n + 1))
+  -- continue here
