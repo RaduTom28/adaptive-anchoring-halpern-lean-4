@@ -1002,10 +1002,111 @@ lemma iteration_bounded (I : Iteration H) (n : ℕ) (p : H) (hPFixed : I.T p = p
     rw [hMax] at hBounds
     assumption
 
+
+theorem mul_ineq_sides {a b c : ℝ} (h : c > 0) : a ≥ b ↔ c * a ≥ c * b := by
+    constructor
+    case mp =>
+      intros h
+      (expose_names; exact (mul_le_mul_iff_of_pos_left h_1).mpr h)
+    case mpr =>
+      intros h
+      expose_names
+      exact le_of_mul_le_mul_left h h_1
+
 lemma iteration_converges_condition_1 (I : Iteration H) (n : ℕ) : ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 2/(phi I (n+1)) * ‖I.x_0 - x I (n+1)‖ := by
   have h1 := And.right (first_bounds I n)
+  have h3 := And.left (first_bounds I n)
+  have h4 : phi I (n + 1) > 0 := by linarith
   field_simp at h1
   have h2 : ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫ ≤
   ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ := by
     exact real_inner_le_norm (x I (n + 1) - I.T (x I (n + 1))) (I.x_0 - x I (n + 1))
-  -- continue here
+  have h3 : ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 ≤ 2/(phi I (n + 1)) * ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ := by
+    calc
+      ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 ≤
+          2 * ⟪x I (n + 1) - I.T (x I (n + 1)), I.x_0 - x I (n + 1)⟫ / phi I (n + 1) := by
+            assumption
+      _ ≤ 2 * ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ / phi I (n + 1) := by
+        rw [←mul_le_mul_iff_of_pos_left h4]
+        field_simp
+        rw [←mul_le_mul_iff_of_pos_left one_half_pos]
+        field_simp
+        ring_nf
+        have aux1 : 1 + n = n + 1 := by exact Nat.add_comm 1 n
+        rw [aux1]
+        assumption
+      _ ≤ 2 / phi I (n + 1) * ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ := by
+        linear_combination
+  have aux1 : ‖x I (n + 1) - I.T (x I (n + 1))‖ ^ 2 = ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖x I (n + 1) - I.T (x I (n + 1))‖ := by
+    exact pow_two ‖x I (n + 1) - I.T (x I (n + 1))‖
+  rw [aux1] at h3
+  have aux2 : ‖x I (n + 1) - I.T (x I (n + 1))‖ > 0 := by
+    refine norm_sub_pos_iff.mpr ?_
+    exact fixed_point_not_encountered_in_sequence I (n+1)
+  have aux3 : 2 / phi I (n + 1) * ‖x I (n + 1) - I.T (x I (n + 1))‖ * ‖I.x_0 - x I (n + 1)‖ =
+      ‖x I (n + 1) - I.T (x I (n + 1))‖ * (( 2 / phi I (n + 1) ) * ‖I.x_0 - x I (n + 1)‖) :=
+      by
+        ring
+  rw [aux3] at h3
+  rw [mul_le_mul_iff_of_pos_left] at h3
+  assumption
+  assumption
+
+lemma t_asymp_reg_1 (I : Iteration H) (n : ℕ) (p : H) (h : I.T p = p): ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 4/(phi I (n+1)) * ‖I.x_0 - p‖ := by
+  have aux1 := And.left (first_bounds I n)
+  have aux2 : phi I (n + 1) > 0 := by linarith
+  have aux3 : 2/phi I (n + 1) > 0 := by
+    simp
+    assumption
+
+  have h1 : ‖I.x_0 - x I (n+1)‖ ≤ 2 * ‖I.x_0 - p‖ := by
+    calc
+      ‖I.x_0 - x I (n + 1)‖ = ‖(I.x_0 - p) + (p - x I (n + 1))‖ := by
+        simp
+      _ ≤ ‖I.x_0 - p‖ + ‖p - x I (n + 1)‖ := by
+        exact norm_sum_ineq_split (I.x_0 - p) (p - x I (n + 1))
+      _ = ‖I.x_0 - p‖ + ‖x I (n + 1) - p‖ := by
+        nth_rw 4 [norm_factor_minus]
+      _ ≤ 2 * ‖I.x_0 - p‖ := by
+        have aux1 := iteration_bounded I (n+1) p h
+        linarith
+  calc
+    ‖x I (n + 1) - I.T (x I (n + 1))‖ ≤ 2 / phi I (n + 1) * ‖I.x_0 - x I (n+1)‖ := by
+      exact iteration_converges_condition_1  I n
+    _ ≤ 4 / phi I (n + 1) * ‖I.x_0 - p‖ := by
+      rw [← mul_le_mul_iff_of_pos_left aux3] at h1
+      ring_nf at h1
+      field_simp at h1
+      have auxlocal1 : ‖I.x_0 - x I (1 + n)‖ * 2 / phi I (1 + n) = (2 / phi I (1 + n)) * ‖I.x_0 - x I (1 + n)‖ := by
+        ring
+      rw [auxlocal1] at h1
+      have auxlocal2 :‖I.x_0 - p‖ * 4 / phi I (1 + n) = 4 / phi I (n + 1) * ‖I.x_0 - p‖ := by
+        ring_nf
+      rw [auxlocal2] at h1
+      have auxlocal3 : 1 + n = n + 1 := by abel
+      rw [auxlocal3] at h1
+      assumption
+
+lemma t_asymp_reg (I : Iteration H) (n : ℕ) (p : H) (h : I.T p = p) : ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 4/(n+1) * ‖I.x_0 - p‖ := by
+  have h1 := t_asymp_reg_1 I n p h
+  have h2 := And.left (first_bounds I n)
+  have aux1 : phi I (n + 1) > 0 := by
+    linarith
+
+  calc
+    ‖x I (n + 1) - I.T (x I (n + 1))‖ ≤ 4 /phi I (n + 1)  * ‖I.x_0 - p‖ := by
+      assumption
+    _ ≤  4 / (↑n + 1) * ‖I.x_0 - p‖ := by
+      field_simp
+      refine (div_le_div_iff_of_pos_left ?_ aux1 ?_).mpr h2
+      have auxlocal1 : ‖I.x_0 - p‖ > 0 := by
+        have auxlocal1 := I.hInitialNotFixed
+        have hPNotFixed : p ≠ I.x_0 := by
+          by_contra hcon
+          rw [hcon] at h
+          contradiction
+        have auxlocal2 : I.x_0 - p ≠ 0 := by
+          exact sub_ne_zero_of_ne (id (Ne.symm hPNotFixed))
+        exact norm_sub_pos_iff.mpr (id (Ne.symm hPNotFixed))
+      linarith
+      linarith
