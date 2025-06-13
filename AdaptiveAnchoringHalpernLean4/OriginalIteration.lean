@@ -1087,7 +1087,7 @@ lemma t_asymp_reg_1 (I : Iteration H) (n : ℕ) (p : H) (h : I.T p = p): ‖x I 
       rw [auxlocal3] at h1
       assumption
 
-lemma t_asymp_reg (I : Iteration H) (n : ℕ) (p : H) (h : I.T p = p) : ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 4/(n+1) * ‖I.x_0 - p‖ := by
+lemma t_asymp_reg (I : Iteration H) (p : H) (h : I.T p = p) (n : ℕ) : ‖x I (n+1) - I.T (x I (n+1))‖ ≤ 4/(n+1) * ‖I.x_0 - p‖ := by
   have h1 := t_asymp_reg_1 I n p h
   have h2 := And.left (first_bounds I n)
   have aux1 : phi I (n + 1) > 0 := by
